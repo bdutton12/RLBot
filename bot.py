@@ -1,16 +1,14 @@
 import rlgym
-from model import PPOModel
 
 """
 Main driver of the program 
 """
 def main():
-    # Create model here
-    model = PPOModel()
 
-    # Create env and set model env
+
+    # Create env and model
     env = rlgym.make()
-    model.SetEnv(env)
+    # 
 
     while True:
         obs = env.reset()

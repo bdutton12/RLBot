@@ -1,15 +1,28 @@
 import rlgym
+from model import PPOModel
 
-env = rlgym.make()
+"""
+Main driver of the program 
+"""
+def main():
+    # Create model here
+    model = PPOModel()
 
-while True:
-    obs = env.reset()
-    done = False
+    # Create env and set model env
+    env = rlgym.make()
+    model.SetEnv(env)
 
-    while not done:
-        # Here we sample a random action. If you have an agent, you would get an action from it here.
-        action = env.action_space.sample()
+    while True:
+        obs = env.reset()
+        done = False
+        print("Hello World")
 
-        next_obs, reward, done, gameinfo = env.step(action)
+        while not done:
+            # Here we sample a random action. If you have an agent, you would get an action from it here.
+            action = env.action_space.sample()
 
-        obs = next_obs
+            next_obs, reward, done, gameinfo = env.step(action)
+
+            obs = next_obs
+
+main()

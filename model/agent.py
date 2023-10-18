@@ -1,9 +1,5 @@
-import os
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.distributions.categorical import Categorical
 
 from actor import ActorNN
 from critic import CriticNN

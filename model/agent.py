@@ -121,7 +121,7 @@ class Agent:
                     a_t += discount * (
                         reward_arr[k]
                         + self.gamma
-                        + values[k + 1] * (1 - int(dones_arr[k]))
+                        * values[k + 1] * (1 - int(dones_arr[k]))
                         - values[k]
                     )
                     discount += self.gamma * self.gae_lambda

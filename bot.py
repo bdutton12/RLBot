@@ -66,8 +66,6 @@ class UnbiasedObservationBuilder(ObsBuilder):
 """
 Initialize an instance of Rocket League
 """
-
-
 def get_match():
     return Match(
         reward_function=VelocityReward(),

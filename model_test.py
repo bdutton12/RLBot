@@ -102,7 +102,7 @@ if __name__ == "__main__":
             score += reward
 
             # The game state, action taken, probability of success, and reward are stored to memory
-            agent.store_to_memory(observation, action, prob, val, reward, done)0
+            agent.store_to_memory(observation, action, prob, val, reward, done)
             
             # Every N steps, a learning iteration is done
             if n_steps % N == 0:

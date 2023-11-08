@@ -111,6 +111,18 @@ class MoveTowardsGoal(RewardFunction):
         self.vel_to_goal = VelocityBallToGoalReward()
         self.vel = VelocityReward()
 
+    def reset(self, initial_state: GameState):
+        self.vel_to_goal.reset()
+        self.vel.reset()
+
+        self.prev_goals = 0
+        self.prev_shots = 0
+        self.prev_saves = 0
+        self.prev_demos = 0
+
+        self.blue_goals = 0
+        self.orange_goals = 0
+
     def get_reward(
         self, player: PlayerData, state: GameState, previous_action: np.ndarray
     ) -> float:

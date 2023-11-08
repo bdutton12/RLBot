@@ -9,6 +9,7 @@ from rlgym.utils import common_values
 from rlgym.utils.gamestates import PlayerData, GameState
 from rlgym.utils.terminal_conditions import TerminalCondition
 from rlgym.utils.gamestates import GameState
+from rlgym.utils.terminal_conditions.common_conditions import TimeoutCondition
 
 from rlgym.envs import Match
 from rlgym_tools.sb3_utils import SB3MultipleInstanceEnv
@@ -26,7 +27,8 @@ class TerminalConditions(TerminalCondition):
         pass
 
     def is_terminal(self, current_state: GameState) -> bool:
-        return current_state.last_touch != -1  # End episode when the ball is touched
+        if current_state.orange_score > 3 or current_state.blue_score > 3:
+            return True
 
 
 """
@@ -66,10 +68,12 @@ class UnbiasedObservationBuilder(ObsBuilder):
 """
 Initialize an instance of Rocket League
 """
+
+
 def get_match():
     return Match(
         reward_function=VelocityReward(),
-        terminal_conditions=[TerminalConditions()],
+        terminal_conditions=[TerminalConditions(), TimeoutCondition(500)],
         obs_builder=UnbiasedObservationBuilder(),
         state_setter=DefaultState(),
         self_play=True,

@@ -87,4 +87,6 @@ if __name__ == "__main__":
     )
 
     learner = PPO(policy="MlpPolicy", env=env, verbose=1)
+    learner.load("./saved_model/PPO_model.zip", env=env)
     learner.learn(1_000_000)
+    learner.save("./saved_model/PPO_model.zip")

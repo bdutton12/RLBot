@@ -95,7 +95,12 @@ if __name__ == "__main__":
 
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=env, verbose=1)
-    learner.load("./saved_model/PPO_model.zip", env=env)
+
+    try:
+        learner.load("./saved_model/PPO_model.zip", env=env)
+        print("Model Loaded")
+    except:
+        print("New Model Initialized")
 
     # Learn
     learner.learn(1_000_000)

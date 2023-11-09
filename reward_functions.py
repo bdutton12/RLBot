@@ -112,8 +112,8 @@ class MoveTowardsGoal(RewardFunction):
         self.vel = VelocityReward()
 
     def reset(self, initial_state: GameState):
-        self.vel_to_goal.reset()
-        self.vel.reset()
+        self.vel_to_goal.reset(initial_state)
+        self.vel.reset(initial_state)
 
         self.prev_goals = 0
         self.prev_shots = 0

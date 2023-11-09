@@ -9,7 +9,7 @@ from rlgym.utils.terminal_conditions import TerminalCondition
 from rlgym.utils.gamestates import GameState
 from rlgym.utils.terminal_conditions.common_conditions import TimeoutCondition
 from rlgym.utils.action_parsers import DefaultAction
-from reward_functions import MoveTowardsGoal
+from reward_functions import MoveTowardsGoal, AlignAndDistanceReward
 
 from rlgym.envs import Match
 from rlgym_tools.sb3_utils import SB3SingleInstanceEnv, SB3MultipleInstanceEnv
@@ -65,25 +65,15 @@ class UnbiasedObservationBuilder(ObsBuilder):
 
 
 """
-Initialize an instance of Rocket League
+Main Entry Point for Training
+
+Defines an environment in RLGym, then passes it to an SB3 wrapper that initializes 
 """
-
-
-def get_match():
-    return Match(
-        reward_function=VelocityReward(),
-        terminal_conditions=[TerminalConditions(), TimeoutCondition(500)],
-        obs_builder=UnbiasedObservationBuilder(),
-        state_setter=DefaultState(),
-        action_parser=DefaultAction(),
-        spawn_opponents=True,
-    )
-
 
 if __name__ == "__main__":
     # Make RLGym environment
     gym_env = rlgym.make(
-        reward_fn=MoveTowardsGoal(),
+        reward_fn=AlignAndDistanceReward(),
         obs_builder=UnbiasedObservationBuilder(),
         terminal_conditions=TerminalConditions(),
         use_injector=True,

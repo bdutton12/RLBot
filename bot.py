@@ -15,6 +15,7 @@ from rlgym.envs import Match
 from rlgym_tools.sb3_utils import SB3SingleInstanceEnv, SB3MultipleInstanceEnv
 
 from stable_baselines3.ppo import PPO
+from stable_baselines3.common.logger import configure
 
 """
 Defines a class for RLGym that determines when to end an episode
@@ -93,6 +94,10 @@ if __name__ == "__main__":
     # Change to SB3 instance wrapper to allow self-play
     env = SB3SingleInstanceEnv(gym_env)
 
+    # Logger config for training, info outputs to stdout and a csv file
+    tmp_path = "data"
+    csv_logger = configure(tmp_path, ["stdout", "csv"])
+
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=env, verbose=1)
 
@@ -101,6 +106,9 @@ if __name__ == "__main__":
         print("Model Loaded")
     except:
         print("New Model Initialized")
+
+    # Set logger 
+    learner.set_logger(csv_logger)
 
     # Learn
     learner.learn(1_000_000)

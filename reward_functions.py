@@ -28,6 +28,7 @@ class AlignAndDistanceReward(RewardFunction):
         face_ball_weight=0.4,
         touch_ball_weight=0.9,
         ball_to_goal_weight=0.6,
+        player_vel_weight=0.4,
         goal_reward=100,
         shot_reward=5,
         save_reward=30,
@@ -38,6 +39,7 @@ class AlignAndDistanceReward(RewardFunction):
         self.face_ball_weight = face_ball_weight
         self.touch_ball_weight = touch_ball_weight
         self.ball_to_goal_weight = ball_to_goal_weight
+        self.player_velocity_weight = player_vel_weight
 
         self.goal = goal_reward
         self.shot = shot_reward
@@ -57,6 +59,7 @@ class AlignAndDistanceReward(RewardFunction):
         self.face_ball_func = FaceBallReward()
         self.touch_ball_func = TouchBallReward()
         self.ball_to_goal_func = VelocityBallToGoalReward()
+        self.player_velocity_func = VelocityReward()
 
     def reset(self, initial_state: GameState):
         self.dist_func.reset(initial_state)
@@ -64,6 +67,7 @@ class AlignAndDistanceReward(RewardFunction):
         self.face_ball_func.reset(initial_state)
         self.touch_ball_func.reset(initial_state)
         self.ball_to_goal_func.reset(initial_state)
+        self.player_velocity_func.reset(initial_state)
 
         self.prev_goals = 0
         self.prev_shots = 0
@@ -97,6 +101,10 @@ class AlignAndDistanceReward(RewardFunction):
 
         # Reward for velocity of ball towards opponent goal
         reward += self.ball_to_goal_weight * self.ball_to_goal_func.get_reward(
+            player, state, previous_action
+        )
+
+        reward += self.player_velocity_weight * self.player_velocity_func.get_reward(
             player, state, previous_action
         )
 
@@ -148,6 +156,10 @@ class AlignAndDistanceReward(RewardFunction):
         )
         reward += self.ball_to_goal_weight * self.ball_to_goal_func.get_final_reward(
             player, state, previous_action
+        )
+        reward += (
+            self.player_velocity_weight
+            * self.player_velocity_func.get_final_reward(player, state, previous_action)
         )
 
         return reward

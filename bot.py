@@ -2,32 +2,18 @@ import numpy as np
 import rlgym
 from rlgym.utils.reward_functions.common_rewards import VelocityReward
 from rlgym.utils.obs_builders import ObsBuilder
-from rlgym.utils.state_setters import DefaultState
 from rlgym.utils import common_values
 from rlgym.utils.gamestates import PlayerData, GameState
 from rlgym.utils.terminal_conditions import TerminalCondition
 from rlgym.utils.gamestates import GameState
-from rlgym.utils.terminal_conditions.common_conditions import TimeoutCondition
-from rlgym.utils.action_parsers import DefaultAction
-from reward_functions import MoveTowardsGoal, AlignAndDistanceReward
-
-from rlgym.envs import Match
-from rlgym_tools.sb3_utils import SB3SingleInstanceEnv, SB3MultipleInstanceEnv
+from rlgym.utils.terminal_conditions.common_conditions import (
+    TimeoutCondition,
+    GoalScoredCondition,
+)
+from reward_functions import AlignAndDistanceReward
+from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
 
 from stable_baselines3.ppo import PPO
-
-"""
-Defines a class for RLGym that determines when to end an episode
-"""
-
-
-class TerminalConditions(TerminalCondition):
-    def reset(self, initial_state: GameState):
-        pass
-
-    def is_terminal(self, current_state: GameState) -> bool:
-        if current_state.orange_score > 3 or current_state.blue_score > 3:
-            return True
 
 
 """
@@ -72,28 +58,42 @@ Defines an environment in RLGym, then passes it to an SB3 wrapper that initializ
 
 if __name__ == "__main__":
     # Make RLGym environment
+    default_tick_skip = 8
+    physics_ticks_per_second = 120
+
+    # Set the max in-game time for an episode and compute max steps to do per game
+    ep_len_seconds = 20
+    max_steps = int(
+        round(ep_len_seconds * physics_ticks_per_second / default_tick_skip)
+    )
+
     gym_env = rlgym.make(
         reward_fn=AlignAndDistanceReward(),
         obs_builder=UnbiasedObservationBuilder(),
-        terminal_conditions=TerminalConditions(),
+        terminal_conditions=[GoalScoredCondition(), TimeoutCondition(max_steps)],
         use_injector=True,
-        spawn_opponents=True,
+        spawn_opponents=False,
     )
 
     # Change to SB3 instance wrapper to allow self-play
-    env = SB3SingleInstanceEnv(gym_env)
+    # env = SB3SingleInstanceEnv(gym_env)
 
     # If a saved model exists, load that and overwrite empty model
-    learner = PPO(policy="MlpPolicy", env=env, verbose=1)
+    learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
 
     try:
-        learner.load("./saved_model/PPO_model.zip", env=env)
+        learner.load("./saved_model/PPO_model.zip", env=gym_env)
         print("Model Loaded")
     except:
         print("New Model Initialized")
 
-    # Learn
-    learner.learn(1_000_000)
+    # Allows one to stop training and not lose as much progress
+    cycles = 40
+    for cycle in range(cycles):
+        # Learn
+        learner.learn(1_000_000)
 
-    # Save model
-    learner.save("./saved_model/PPO_model.zip")
+        print(f"\n\nSaving Model at Cycle #{cycle}\n\n")
+
+        # Save model
+        learner.save("./saved_model/PPO_model.zip")

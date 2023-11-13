@@ -14,6 +14,7 @@ from reward_functions import AlignAndDistanceReward
 from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
 
 from stable_baselines3.ppo import PPO
+from stable_baselines3.common.logger import configure
 
 
 """
@@ -78,6 +79,10 @@ if __name__ == "__main__":
     # Change to SB3 instance wrapper to allow self-play
     # env = SB3SingleInstanceEnv(gym_env)
 
+    # Logger config for training, info outputs to stdout and a csv file
+    tmp_path = "data"
+    csv_logger = configure(tmp_path, ["stdout", "csv"])
+
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
 
@@ -87,6 +92,7 @@ if __name__ == "__main__":
     except:
         print("New Model Initialized")
 
+    learner.set_logger(csv_logger)
     # Allows one to stop training and not lose as much progress
     cycles = 40
     for cycle in range(cycles):

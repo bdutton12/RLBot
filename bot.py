@@ -87,7 +87,7 @@ if __name__ == "__main__":
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
 
     try:
-        learner.load("./saved_model/PPO_model.zip", env=gym_env)
+        learner = learner.load("./saved_model/PPO_model.zip", env=gym_env)
         print("Model Loaded")
     except:
         print("New Model Initialized")

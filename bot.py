@@ -15,6 +15,7 @@ from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
 
 from stable_baselines3.ppo import PPO
 from stable_baselines3.common.logger import configure
+from stable_baselines3.common.monitor import Monitor
 
 
 """
@@ -80,8 +81,11 @@ if __name__ == "__main__":
     # env = SB3SingleInstanceEnv(gym_env)
 
     # Logger config for training, info outputs to stdout and a csv file
-    tmp_path = "data"
-    csv_logger = configure(tmp_path, ["stdout", "csv"])
+    log_path = "data"
+    csv_logger = configure(log_path, ["stdout", "csv"])
+
+    # Wrap env to log reward at each training timestep
+    gym_env= Monitor(gym_env, log_path)
 
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)

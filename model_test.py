@@ -1,3 +1,4 @@
+from typing import *
 import gym
 import numpy as np
 

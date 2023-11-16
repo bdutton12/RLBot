@@ -49,7 +49,9 @@ class UnbiasedObservationBuilder(ObsBuilder):
             else:
                 obs += player.car_data.serialize()
 
-        return np.asarray(obs, dtype=np.float32)
+        obs = np.asarray(obs, dtype=np.float32)
+        print(obs.shape)
+        return obs
 
 
 """
@@ -59,26 +61,20 @@ Defines an environment in RLGym, then passes it to an SB3 wrapper that initializ
 """
 
 
-
-
-
-
-
 if __name__ == "__main__":
     # specify model
 
-    reward_model = '1'
-    reward_model = '2'
+    reward_model = "1"
+    reward_model = "2"
 
-    if reward_model == '1':
+    if reward_model == "1":
         reward_fn = AlignAndDistanceReward()
         log_path = "data"
         saved_model_dir = "./saved_model/PPO_model.zip"
-    elif reward_model == '2':
+    elif reward_model == "2":
         reward_fn = HybridReward()
         log_path = "data2"
         saved_model_dir = "./saved_model/PPO_model2.zip"
-
 
     # Make RLGym environment
     default_tick_skip = 8
@@ -111,7 +107,6 @@ if __name__ == "__main__":
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
 
-    
     try:
         learner = learner.load(saved_model_dir, env=gym_env)
         print("Model Loaded")

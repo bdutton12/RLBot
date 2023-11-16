@@ -6,7 +6,13 @@ from rlgym_compat import PlayerData, GameState
 
 
 class DefaultObs:
-    def __init__(self, pos_coef=1/2300, ang_coef=1/math.pi, lin_vel_coef=1/2300, ang_vel_coef=1/math.pi):
+    def __init__(
+        self,
+        pos_coef=1 / 2300,
+        ang_coef=1 / math.pi,
+        lin_vel_coef=1 / 2300,
+        ang_vel_coef=1 / math.pi,
+    ):
         """
         :param pos_coef: Position normalization coefficient
         :param ang_coef: Rotation angle normalization coefficient
@@ -22,7 +28,9 @@ class DefaultObs:
     def reset(self, initial_state: GameState):
         pass
 
-    def build_obs(self, player: PlayerData, state: GameState, previous_action: np.ndarray) -> Any:
+    def build_obs(
+        self, player: PlayerData, state: GameState, previous_action: np.ndarray
+    ) -> Any:
         if player.team_num == common_values.ORANGE_TEAM:
             inverted = True
             ball = state.inverted_ball
@@ -32,11 +40,13 @@ class DefaultObs:
             ball = state.ball
             pads = state.boost_pads
 
-        obs = [ball.position * self.POS_COEF,
-               ball.linear_velocity * self.LIN_VEL_COEF,
-               ball.angular_velocity * self.ANG_VEL_COEF,
-               previous_action,
-               pads]
+        obs = [
+            ball.position * self.POS_COEF,
+            ball.linear_velocity * self.LIN_VEL_COEF,
+            ball.angular_velocity * self.ANG_VEL_COEF,
+            previous_action,
+            pads,
+        ]
 
         self._add_player_to_obs(obs, player, inverted)
 
@@ -64,15 +74,20 @@ class DefaultObs:
         else:
             player_car = player.car_data
 
-        obs.extend([
-            player_car.position * self.POS_COEF,
-            player_car.forward(),
-            player_car.up(),
-            player_car.linear_velocity * self.LIN_VEL_COEF,
-            player_car.angular_velocity * self.ANG_VEL_COEF,
-            [player.boost_amount,
-             int(player.on_ground),
-             int(player.has_flip),
-             int(player.is_demoed)]])
+        obs.extend(
+            [
+                player_car.position * self.POS_COEF,
+                player_car.forward(),
+                player_car.up(),
+                player_car.linear_velocity * self.LIN_VEL_COEF,
+                player_car.angular_velocity * self.ANG_VEL_COEF,
+                [
+                    player.boost_amount,
+                    int(player.on_ground),
+                    int(player.has_flip),
+                    int(player.is_demoed),
+                ],
+            ]
+        )
 
         return player_car

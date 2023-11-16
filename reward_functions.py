@@ -1,6 +1,9 @@
 import numpy as np
 from rlgym.utils.reward_functions import RewardFunction
-from rlgym.utils.reward_functions.common_rewards import AlignBallGoal, VelocityBallToGoalReward
+from rlgym.utils.reward_functions.common_rewards import (
+    AlignBallGoal,
+    VelocityBallToGoalReward,
+)
 from rlgym.utils.gamestates import GameState, PlayerData
 from rlgym.utils import common_values, math
 from rlgym.utils.reward_functions.common_rewards import (
@@ -138,7 +141,7 @@ class AlignAndDistanceReward(RewardFunction):
             self.blue_goals = state.blue_score
             self.orange_goals = state.orange_score
 
-        return reward
+        return reward if player.team_num == common_values.BLUE_TEAM else -reward
 
     def get_final_reward(
         self, player: PlayerData, state: GameState, previous_action: np.ndarray
@@ -163,16 +166,10 @@ class AlignAndDistanceReward(RewardFunction):
             * self.player_velocity_func.get_final_reward(player, state, previous_action)
         )
 
-        return reward
-
-
-
-
-
+        return reward if player.team_num == common_values.BLUE_TEAM else -reward
 
 
 class HybridReward(RewardFunction):
-
     reward_functions: list[RewardFunction]
 
     def __init__(self):
@@ -191,10 +188,7 @@ class HybridReward(RewardFunction):
             func.reset(initial_state)
 
     def get_reward(
-            self,
-            player: PlayerData,
-            state: GameState,
-            previous_action: np.ndarray
+        self, player: PlayerData, state: GameState, previous_action: np.ndarray
     ) -> float:
         rewards = [
             func.get_reward(player, state, previous_action)
@@ -204,10 +198,7 @@ class HybridReward(RewardFunction):
         return float(np.dot(self.reward_weights, rewards))
 
     def get_final_reward(
-            self,
-            player: PlayerData,
-            state: GameState,
-            previous_action: np.ndarray
+        self, player: PlayerData, state: GameState, previous_action: np.ndarray
     ) -> float:
         rewards = [
             func.get_final_reward(player, state, previous_action)
@@ -215,4 +206,3 @@ class HybridReward(RewardFunction):
         ]
 
         return float(np.dot(self.reward_weights, rewards))
-

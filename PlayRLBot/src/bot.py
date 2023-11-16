@@ -7,6 +7,77 @@ from action.default_act import DefaultAction
 from agent import Agent
 from obs.default_obs import DefaultObs
 from rlgym_compat import GameState
+from rlgym_compat import common_values
+from rlgym_compat import PlayerData
+
+"""
+Observation Object for RLGym
+
+Gets current state of ball and all players and inverts the values if bot is on team Orange
+so that the model doesn't need to worry about team
+"""
+
+
+class UnbiasedObservationBuilder:
+    def __init__(self, index) -> None:
+        self.index = index
+
+    def reset(self, initial_state: GameState):
+        pass
+
+    def build_obs(
+        self, player: PlayerData, state: GameState, previous_action: np.ndarray
+    ):
+        obs = []
+
+        # If this observation is being built for a player on the orange team, we need to invert all the physics data we use.
+        inverted = player.team_num == common_values.ORANGE_TEAM
+
+        if inverted:
+            ball = state.inverted_ball
+        else:
+            ball = state.ball
+
+        if ball.position is not None:
+            for arg in ball.position:
+                obs.append(arg)
+
+        if ball.quaternion is not None:
+            for arg in ball.quaternion:
+                obs.append(arg)
+
+        if ball.linear_velocity is not None:
+            for arg in ball.linear_velocity:
+                obs.append(arg)
+
+        if ball.angular_velocity is not None:
+            for arg in ball.angular_velocity:
+                obs.append(arg)
+
+        player = state.players[self.index]
+
+        if inverted:
+            car = player.inverted_car_data
+        else:
+            car = player.car_data
+
+        if car.position is not None:
+            for arg in car.position:
+                obs.append(arg)
+
+        if car.quaternion is not None:
+            for arg in car.quaternion:
+                obs.append(arg)
+
+        if car.linear_velocity is not None:
+            for arg in car.linear_velocity:
+                obs.append(arg)
+
+        if car.angular_velocity is not None:
+            for arg in car.angular_velocity:
+                obs.append(arg)
+
+        return np.asarray(obs, dtype=np.float32)
 
 
 class RLGymExampleBot(BaseAgent):
@@ -15,7 +86,7 @@ class RLGymExampleBot(BaseAgent):
 
         # FIXME Hey, botmaker. Start here:
         # Swap the obs builder if you are using a different one, RLGym's AdvancedObs is also available
-        self.obs_builder = DefaultObs()
+        self.obs_builder = UnbiasedObservationBuilder(index)
         # Swap the action parser if you are using a different one, RLGym's Discrete and Continuous are also available
         self.act_parser = DefaultAction()
         # Your neural network logic goes inside the Agent class, go take a look inside src/agent.py
@@ -81,6 +152,7 @@ class RLGymExampleBot(BaseAgent):
                 self.game_state.players = [player, opponent]
 
             obs = self.obs_builder.build_obs(player, self.game_state, self.action)
+            print(self.agent.act(obs))
             self.action = self.act_parser.parse_actions(
                 self.agent.act(obs), self.game_state
             )[

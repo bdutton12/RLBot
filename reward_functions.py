@@ -1,5 +1,6 @@
 import numpy as np
 from rlgym.utils.reward_functions import RewardFunction
+from rlgym.utils.reward_functions.common_rewards import AlignBallGoal, VelocityBallToGoalReward
 from rlgym.utils.gamestates import GameState, PlayerData
 from rlgym.utils import common_values, math
 from rlgym.utils.reward_functions.common_rewards import (
@@ -163,3 +164,55 @@ class AlignAndDistanceReward(RewardFunction):
         )
 
         return reward
+
+
+
+
+
+
+
+class HybridReward(RewardFunction):
+
+    reward_functions: list[RewardFunction]
+
+    def __init__(self):
+        super().__init__()
+
+        self.reward_functions = [
+            VelocityReward(),
+            VelocityBallToGoalReward(),
+        ]
+        self.reward_weights = np.array([1, 1])
+
+        assert len(self.reward_functions) == len(self.reward_weights)
+
+    def reset(self, initial_state: GameState) -> None:
+        for func in self.reward_functions:
+            func.reset(initial_state)
+
+    def get_reward(
+            self,
+            player: PlayerData,
+            state: GameState,
+            previous_action: np.ndarray
+    ) -> float:
+        rewards = [
+            func.get_reward(player, state, previous_action)
+            for func in self.reward_functions
+        ]
+
+        return float(np.dot(self.reward_weights, rewards))
+
+    def get_final_reward(
+            self,
+            player: PlayerData,
+            state: GameState,
+            previous_action: np.ndarray
+    ) -> float:
+        rewards = [
+            func.get_final_reward(player, state, previous_action)
+            for func in self.reward_functions
+        ]
+
+        return float(np.dot(self.reward_weights, rewards))
+

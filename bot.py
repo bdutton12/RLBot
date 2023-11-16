@@ -10,7 +10,7 @@ from rlgym.utils.terminal_conditions.common_conditions import (
     TimeoutCondition,
     GoalScoredCondition,
 )
-from reward_functions import AlignAndDistanceReward
+from reward_functions import AlignAndDistanceReward, HybridReward
 from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
 
 from stable_baselines3.ppo import PPO
@@ -58,7 +58,28 @@ Main Entry Point for Training
 Defines an environment in RLGym, then passes it to an SB3 wrapper that initializes 
 """
 
+
+
+
+
+
+
 if __name__ == "__main__":
+    # specify model
+
+    reward_model = '1'
+    reward_model = '2'
+
+    if reward_model == '1':
+        reward_fn = AlignAndDistanceReward()
+        log_path = "data"
+        saved_model_dir = "./saved_model/PPO_model.zip"
+    elif reward_model == '2':
+        reward_fn = HybridReward()
+        log_path = "data2"
+        saved_model_dir = "./saved_model/PPO_model2.zip"
+
+
     # Make RLGym environment
     default_tick_skip = 8
     physics_ticks_per_second = 120
@@ -70,7 +91,7 @@ if __name__ == "__main__":
     )
 
     gym_env = rlgym.make(
-        reward_fn=AlignAndDistanceReward(),
+        reward_fn=reward_fn,
         obs_builder=UnbiasedObservationBuilder(),
         terminal_conditions=[GoalScoredCondition(), TimeoutCondition(max_steps)],
         use_injector=True,
@@ -81,7 +102,7 @@ if __name__ == "__main__":
     # env = SB3SingleInstanceEnv(gym_env)
 
     # Logger config for training, info outputs to stdout and a csv file
-    log_path = "data"
+
     csv_logger = configure(log_path, ["stdout", "csv"])
 
     # Wrap env to log reward at each training timestep
@@ -90,8 +111,9 @@ if __name__ == "__main__":
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
 
+    
     try:
-        learner = learner.load("./saved_model/PPO_model.zip", env=gym_env)
+        learner = learner.load(saved_model_dir, env=gym_env)
         print("Model Loaded")
     except:
         print("New Model Initialized")
@@ -106,4 +128,4 @@ if __name__ == "__main__":
         print(f"\n\nSaving Model at Cycle #{cycle}\n\n")
 
         # Save model
-        learner.save("./saved_model/PPO_model.zip")
+        learner.save(saved_model_dir)

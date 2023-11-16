@@ -1,4 +1,3 @@
-from typing import *
 import gym
 import numpy as np
 
@@ -12,6 +11,15 @@ from rlgym.utils.gamestates import GameState
 
 from model.agent import Agent
 
+"""
+Defines a class for RLGym that determines when to end an episode
+"""
+class CustomTerminalCondition(TerminalCondition):
+    def reset(self, initial_state: GameState):
+        pass
+
+    def is_terminal(self, current_state: GameState) -> bool:
+        return current_state.last_touch != -1 # End episode when the ball is touched
 
 """
 Observation Object for RLGym
@@ -19,15 +27,13 @@ Observation Object for RLGym
 Gets current state of ball and all players and inverts the values if bot is on team Orange
 so that the model doesn't need to worry about team
 """
-
-
-class UnbiasedObservationBuilder(ObsBuilder):
+class CustomObsBuilderBluePerspective(ObsBuilder):
     def reset(self, initial_state: GameState):
         pass
 
     def build_obs(
         self, player: PlayerData, state: GameState, previous_action: np.ndarray
-    ):
+    ) -> Any:
         obs = []
 
         # If this observation is being built for a player on the orange team, we need to invert all the physics data we use.
@@ -82,27 +88,28 @@ if __name__ == "__main__":
         done = False
         score = 0
         while not done:
+
             # Agent returns a vector [throttle, steer, yaw, pitch, roll, jump, boost, handbrake]
             # The first five are in the range [-1, 1], the latter are boolean
             action, prob, val = agent.choose_action(observation)
 
             # Updated game state, reward, and whether the episode is done is retrieved
             observation_, reward, done, info = env.step(action)
-
+            
             n_steps += 1
-
+            
             # The reward for all actions in an episode are summed
             score += reward
 
             # The game state, action taken, probability of success, and reward are stored to memory
             agent.store_to_memory(observation, action, prob, val, reward, done)
-
+            
             # Every N steps, a learning iteration is done
             if n_steps % N == 0:
                 agent.learn()
                 learn_iters += 1
             observation = observation_
-
+        
         # Score history is updated and the average of the last 100 scores is taken
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])

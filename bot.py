@@ -85,7 +85,7 @@ if __name__ == "__main__":
     csv_logger = configure(log_path, ["stdout", "csv"])
 
     # Wrap env to log reward at each training timestep
-    gym_env= Monitor(gym_env, log_path)
+    gym_env = Monitor(gym_env, log_path)
 
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)

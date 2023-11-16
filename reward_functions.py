@@ -29,10 +29,10 @@ class AlignAndDistanceReward(RewardFunction):
         touch_ball_weight=0.9,
         ball_to_goal_weight=0.6,
         player_vel_weight=0.4,
-        goal_reward=100,
-        shot_reward=5,
-        save_reward=30,
-        demo_reward=10,
+        goal_reward=1000,
+        shot_reward=50,
+        save_reward=300,
+        demo_reward=100,
     ):
         self.dist_weight = dist_weight
         self.align_ball_weight = align_ball_weight

@@ -12,6 +12,7 @@ from rlgym.utils.reward_functions.common_rewards import (
     VelocityReward,
     FaceBallReward,
     AlignBallGoal,
+    EventReward,
 )
 from rlgym.utils.reward_functions.common_rewards.player_ball_rewards import (
     TouchBallReward,
@@ -34,9 +35,9 @@ class AlignAndDistanceReward(RewardFunction):
         ball_to_goal_weight=0.6,
         player_vel_weight=0.4,
         goal_reward=1000,
-        shot_reward=50,
+        shot_reward=100,
         save_reward=300,
-        demo_reward=100,
+        demo_reward=50,
     ):
         self.dist_weight = dist_weight
         self.align_ball_weight = align_ball_weight
@@ -45,19 +46,9 @@ class AlignAndDistanceReward(RewardFunction):
         self.ball_to_goal_weight = ball_to_goal_weight
         self.player_velocity_weight = player_vel_weight
 
-        self.goal = goal_reward
-        self.shot = shot_reward
-        self.save = save_reward
-        self.demo = demo_reward
-
-        self.prev_goals = 0
-        self.prev_shots = 0
-        self.prev_saves = 0
-        self.prev_demos = 0
-
-        self.blue_goals = 0
-        self.orange_goals = 0
-
+        self.event_reward_func = EventReward(
+            goal_reward, 0, -goal_reward, 50, shot_reward, save_reward, demo_reward, 10
+        )
         self.dist_func = LiuDistancePlayerToBallReward()
         self.align_ball_func = AlignBallGoal()
         self.face_ball_func = FaceBallReward()
@@ -72,14 +63,7 @@ class AlignAndDistanceReward(RewardFunction):
         self.touch_ball_func.reset(initial_state)
         self.ball_to_goal_func.reset(initial_state)
         self.player_velocity_func.reset(initial_state)
-
-        self.prev_goals = 0
-        self.prev_shots = 0
-        self.prev_saves = 0
-        self.prev_demos = 0
-
-        self.blue_goals = initial_state.blue_score
-        self.orange_goals = initial_state.orange_score
+        self.event_reward_func.reset(initial_state)
 
     def get_reward(
         self, player: PlayerData, state: GameState, previous_action: np.ndarray
@@ -113,35 +97,9 @@ class AlignAndDistanceReward(RewardFunction):
         )
 
         # Reward for goals, saves, shots, and demos
-        if self.prev_goals < player.match_goals:
-            reward += self.goal
-            self.prev_goals = player.match_goals
+        reward += self.event_reward_func.get_reward(player, state, previous_action)
 
-        if self.prev_saves < player.match_saves:
-            reward += self.save
-            self.prev_saves = player.match_saves
-
-        if self.prev_shots < player.match_shots:
-            reward += self.shot
-            self.prev_shots = player.match_shots
-
-        if self.prev_demos < player.match_demolishes:
-            reward += self.demo
-            self.prev_demos = player.match_demolishes
-
-        # Penalize for getting scored on
-        if (
-            player.team_num == common_values.ORANGE_TEAM
-            and state.blue_score > self.blue_goals
-        ) or (
-            player.team_num == common_values.BLUE_TEAM
-            and state.orange_score > self.orange_goals
-        ):
-            reward -= self.goal
-            self.blue_goals = state.blue_score
-            self.orange_goals = state.orange_score
-
-        return reward if player.team_num == common_values.BLUE_TEAM else -reward
+        return reward
 
     def get_final_reward(
         self, player: PlayerData, state: GameState, previous_action: np.ndarray
@@ -165,8 +123,11 @@ class AlignAndDistanceReward(RewardFunction):
             self.player_velocity_weight
             * self.player_velocity_func.get_final_reward(player, state, previous_action)
         )
+        reward += self.event_reward_func.get_final_reward(
+            player, state, previous_action
+        )
 
-        return reward if player.team_num == common_values.BLUE_TEAM else -reward
+        return reward
 
 
 class HybridReward(RewardFunction):

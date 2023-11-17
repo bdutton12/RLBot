@@ -10,6 +10,7 @@ from rlgym.utils.terminal_conditions.common_conditions import (
     TimeoutCondition,
     GoalScoredCondition,
 )
+from rlgym.utils.action_parsers import DefaultAction
 from reward_functions import AlignAndDistanceReward, HybridReward
 from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
 
@@ -49,9 +50,7 @@ class UnbiasedObservationBuilder(ObsBuilder):
             else:
                 obs += player.car_data.serialize()
 
-        obs = np.asarray(obs, dtype=np.float32)
-        print(obs.shape)
-        return obs
+        return np.asarray(obs, dtype=np.float32)
 
 
 """
@@ -65,7 +64,7 @@ if __name__ == "__main__":
     # specify model
 
     reward_model = "1"
-    reward_model = "2"
+    # reward_model = "2"
 
     if reward_model == "1":
         reward_fn = AlignAndDistanceReward()
@@ -81,7 +80,7 @@ if __name__ == "__main__":
     physics_ticks_per_second = 120
 
     # Set the max in-game time for an episode and compute max steps to do per game
-    ep_len_seconds = 20
+    ep_len_seconds = 180
     max_steps = int(
         round(ep_len_seconds * physics_ticks_per_second / default_tick_skip)
     )
@@ -91,18 +90,17 @@ if __name__ == "__main__":
         obs_builder=UnbiasedObservationBuilder(),
         terminal_conditions=[GoalScoredCondition(), TimeoutCondition(max_steps)],
         use_injector=True,
-        spawn_opponents=False,
+        spawn_opponents=True,
     )
 
-    # Change to SB3 instance wrapper to allow self-play
-    # env = SB3SingleInstanceEnv(gym_env)
-
-    # Logger config for training, info outputs to stdout and a csv file
-
-    csv_logger = configure(log_path, ["stdout", "csv"])
-
     # Wrap env to log reward at each training timestep
-    gym_env = Monitor(gym_env, log_path)
+    # gym_env = Monitor(gym_env, log_path)
+
+    # # Logger config for training, info outputs to stdout and a csv file
+    # csv_logger = configure(log_path, ["stdout", "csv"])
+
+    # Change to SB3 instance wrapper to allow self-play
+    gym_env = SB3SingleInstanceEnv(gym_env)
 
     # If a saved model exists, load that and overwrite empty model
     learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
@@ -113,7 +111,7 @@ if __name__ == "__main__":
     except:
         print("New Model Initialized")
 
-    learner.set_logger(csv_logger)
+    # learner.set_logger(csv_logger)
     # Allows one to stop training and not lose as much progress
     cycles = 40
     for cycle in range(cycles):

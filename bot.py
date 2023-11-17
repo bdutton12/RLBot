@@ -12,11 +12,15 @@ from rlgym.utils.terminal_conditions.common_conditions import (
 )
 from rlgym.utils.action_parsers import DefaultAction
 from reward_functions import AlignAndDistanceReward, HybridReward
-from rlgym_tools.sb3_utils import SB3SingleInstanceEnv
+from rlgym_tools.sb3_utils import SB3SingleInstanceEnv, SB3MultipleInstanceEnv
+from rlgym.envs import Match
 
 from stable_baselines3.ppo import PPO
 from stable_baselines3.common.logger import configure
 from stable_baselines3.common.monitor import Monitor
+from stable_baselines3.common.vec_env import VecMonitor, VecNormalize, VecCheckNan
+from rlgym.utils.state_setters import DefaultState
+from rlgym_tools.extra_action_parsers.lookup_act import LookupAction
 
 
 """
@@ -53,6 +57,34 @@ class UnbiasedObservationBuilder(ObsBuilder):
         return np.asarray(obs, dtype=np.float32)
 
 
+def get_match():  # Need to use a function so that each instance can call it and produce their own objects
+    # Make RLGym environment
+    default_tick_skip = 8
+    physics_ticks_per_second = 120
+
+    # Set the max in-game time for an episode and compute max steps to do per game
+    ep_len_seconds = 180
+    max_steps = int(
+        round(ep_len_seconds * physics_ticks_per_second / default_tick_skip)
+    )
+
+    match = Match(
+        team_size=1,
+        tick_skip=8,
+        reward_function=AlignAndDistanceReward(),
+        spawn_opponents=True,
+        terminal_conditions=[
+            TimeoutCondition(max_steps),
+            GoalScoredCondition(),
+        ],
+        obs_builder=UnbiasedObservationBuilder(),  # Not that advanced, good default
+        state_setter=DefaultState(),  # Resets to kickoff position
+        action_parser=LookupAction(),  # Discrete > Continuous don't @ me
+    )
+
+    return match
+
+
 """
 Main Entry Point for Training
 
@@ -85,35 +117,34 @@ if __name__ == "__main__":
         round(ep_len_seconds * physics_ticks_per_second / default_tick_skip)
     )
 
-    gym_env = rlgym.make(
-        reward_fn=reward_fn,
-        obs_builder=UnbiasedObservationBuilder(),
-        terminal_conditions=[GoalScoredCondition(), TimeoutCondition(max_steps)],
-        use_injector=True,
-        spawn_opponents=True,
-    )
-
-    # Wrap env to log reward at each training timestep
-    # gym_env = Monitor(gym_env, log_path)
-
-    # # Logger config for training, info outputs to stdout and a csv file
-    # csv_logger = configure(log_path, ["stdout", "csv"])
+    # gym_env = rlgym.make(
+    #     reward_fn=reward_fn,
+    #     obs_builder=UnbiasedObservationBuilder(),
+    #     terminal_conditions=[GoalScoredCondition(), TimeoutCondition(max_steps)],
+    #     use_injector=True,
+    #     spawn_opponents=True,
+    # )
 
     # Change to SB3 instance wrapper to allow self-play
-    gym_env = SB3SingleInstanceEnv(gym_env)
+    env = SB3MultipleInstanceEnv(get_match, num_instances=2, wait_time=60)
+
+    # env = Monitor(env)  # Recommended, logs mean reward and ep_len to Tensorboard
+
+    # # # Logger config for training, info outputs to stdout and a csv file
+    # csv_logger = configure(log_path, ["stdout", "csv"])
 
     # If a saved model exists, load that and overwrite empty model
-    learner = PPO(policy="MlpPolicy", env=gym_env, verbose=1)
+    learner = PPO(policy="MlpPolicy", env=env, verbose=1)
 
     try:
-        learner = learner.load(saved_model_dir, env=gym_env)
+        learner = learner.load(saved_model_dir, env=env)
         print("Model Loaded")
     except:
         print("New Model Initialized")
 
     # learner.set_logger(csv_logger)
     # Allows one to stop training and not lose as much progress
-    cycles = 40
+    cycles = 400
     for cycle in range(cycles):
         # Learn
         learner.learn(1_000_000)
